@@ -597,19 +597,16 @@ function doGet(e) {
 
 <script>
   // ===== STATE =====
-  let GAS_URL = '';
+  let GAS_URL = 'https://script.google.com/macros/s/AKfycbyt7MKfSwq6ZGMjvX7ZTJBULyTMCjfiFx_zFDMu1LqXM0ejSJrjo0ICEqoIVi2mRCVU/exec';
   let allRecords = []; // [{timestamp, name, answers:[], score, percentage}]
   let sortByScore = false;
 
   // ===== INIT =====
   try {
-    const saved = localStorage.getItem('gas_url');
-    if (saved) {
-      GAS_URL = saved;
-      document.getElementById('gasUrl').value = saved;
-      document.getElementById('setupStatus').textContent = '✅ 接続済み';
-      document.getElementById('setupStatus').className = 'setup-status connected';
-    }
+    // GAS URLは直接埋め込み済み。localStorageの上書きは無視
+    document.getElementById('gasUrl').value = GAS_URL;
+    document.getElementById('setupStatus').textContent = '✅ 接続済み';
+    document.getElementById('setupStatus').className = 'setup-status connected';
     const savedRecords = localStorage.getItem('drill_records');
     if (savedRecords) allRecords = JSON.parse(savedRecords);
   } catch(e) {}
