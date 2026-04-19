@@ -603,6 +603,71 @@ const BUILTIN_TEST = {
   ]
 };
 
+// ===== BUILT-IN TEST (Lesson 2) =====
+const BUILTIN_TEST2 = {
+  id: 'builtin-lesson2',
+  title: '第2課：感情・気持ち',
+  createdAt: '2024-01-01',
+  builtin: true,
+  sections: [
+    {
+      heading: '大問1',
+      instruction: 'つぎの（　　）に合うものをそれぞれa～dの中から一つ選びなさい。',
+      choices: ['a. 感激する', 'b. 後悔する', 'c. 確信する', 'd. 慕う'],
+      questions: [
+        { text: '① 合格を（　　）', correct: 'a' },
+        { text: '② 課長を（　　）部下', correct: 'd' },
+        { text: '③ プレゼントに（　　）', correct: 'a' },
+        { text: '④ 発言を（　　）', correct: 'b' }
+      ]
+    },
+    {
+      heading: '',
+      instruction: '',
+      choices: ['a. うんざり', 'b. 未練', 'c. 心強い', 'd. 空しい'],
+      questions: [
+        { text: '⑤ 毎日暑くて（　　）する', correct: 'a' },
+        { text: '⑥ （　　）応援', correct: 'c' },
+        { text: '⑦ （　　）努力', correct: 'd' },
+        { text: '⑧ （　　）がある', correct: 'b' }
+      ]
+    },
+    {
+      heading: '大問2',
+      instruction: 'a、bのうち、正しいほうを一つ選びなさい。',
+      choices: [],
+      questions: [
+        { text: '① 彼女は1年以上、同僚のAさんに（a. 愛情　b. 片思い）している。', correct: 'b' },
+        { text: '② 私は小さいことに（a. こだわる　b. けなす）性格だ。', correct: 'a' },
+        { text: '③ この事件は、世の中の（a. 関心　b. 確信）を集めている。', correct: 'a' },
+        { text: '④ 店員がミスをしたので文句を言ったら、逆に向こうが（a. むかついて　b. キレて）しまった。', correct: 'b' }
+      ]
+    },
+    {
+      heading: '大問3',
+      instruction: 'つぎの（　　）に合うものをa～eの中から一つ選びなさい。',
+      choices: ['a. 情けない', 'b. 心細い', 'c. 切ない', 'd. ばかばかしい', 'e. うっとうしい'],
+      questions: [
+        { text: '① こんなまずい料理に5000円も払うなんて（　　）。もう二度と来ないよ。', correct: 'd' },
+        { text: '② 一人で病院に行くのは（　　）ので、母に一緒に行ってもらうつもりだ。', correct: 'b' },
+        { text: '③ この曲を聴くと昔を思い出して（　　）気持ちになる。', correct: 'c' },
+        { text: '④ 社会人になったのに朝一人で起きられないなんて（　　）。', correct: 'a' }
+      ]
+    },
+    {
+      heading: '大問4',
+      instruction: 'つぎの（　　）に合うものをa～eの中から一つ選びなさい。',
+      choices: ['a. 恥じて', 'b. 惜しんで', 'c. 恨んで', 'd. 怒鳴って', 'e. 嘆いて'],
+      questions: [
+        { text: '① 彼は優勝できなかったことを（　　）いるようだ。', correct: 'b' },
+        { text: '② 彼の死を（　　）、多くのファンがここを訪れる。', correct: 'e' },
+        { text: '③ 兄はすぐに仕事を辞めるので、親がいつも（　　）いる。', correct: 'e' },
+        { text: '④ 仕事の関係でいらいらして、つい子供に（　　）しまった。', correct: 'd' }
+      ]
+    }
+  ]
+};
+
 // ===== INIT =====
 (function init() {
   // Check teacher mode
@@ -659,11 +724,13 @@ function populateTestSelect() {
   const sel = document.getElementById('testSelect');
   sel.innerHTML = '<option value="">-- テストを選んでください --</option>';
 
-  // Built-in first
-  const opt0 = document.createElement('option');
-  opt0.value = BUILTIN_TEST.id;
-  opt0.textContent = BUILTIN_TEST.title;
-  sel.appendChild(opt0);
+  // Built-in tests
+  [BUILTIN_TEST, BUILTIN_TEST2].forEach(function(bt) {
+    const opt = document.createElement('option');
+    opt.value = bt.id;
+    opt.textContent = bt.title;
+    sel.appendChild(opt);
+  });
 
   // User-added tests
   tests.forEach(function(t) {
@@ -690,6 +757,7 @@ function loadSelectedTest() {
 
 function getTestById(id) {
   if (id === BUILTIN_TEST.id) return BUILTIN_TEST;
+  if (id === BUILTIN_TEST2.id) return BUILTIN_TEST2;
   return tests.find(function(t) { return t.id === id; }) || null;
 }
 
