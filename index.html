@@ -375,7 +375,7 @@
   <!-- Top nav (teacher mode shows extra tabs) -->
   <div class="top-nav" id="topNav" style="display:none;">
     <button class="tab-btn active" id="tabQuizBtn" onclick="switchTab('quiz')">📝 ドリル</button>
-    <button class="tab-btn" id="tabDashBtn" onclick="switchTab('dashboard')">📊 ダッシュボード</button>
+    <button class="tab-btn" id="tabDashBtn" onclick="switchTab('dashboard')" style="display:none;">📊 ダッシュボード</button>
     <button class="tab-btn" id="tabAddBtn" onclick="switchTab('add')" style="display:none;">➕ テスト追加</button>
   </div>
 
@@ -697,6 +697,7 @@ const BUILTIN_TEST2 = {
   nav.style.display = 'flex';
 
   if (isTeacher) {
+    document.getElementById('tabDashBtn').style.display = '';
     document.getElementById('tabAddBtn').style.display = '';
     // Populate settings
     try {
