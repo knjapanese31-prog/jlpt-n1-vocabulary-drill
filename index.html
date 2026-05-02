@@ -49,6 +49,23 @@
   .form-title-card .desc { font-size: 14px; color: #70757a; }
   .form-title-card .required-note { font-size: 13px; color: #d93025; margin-top: 10px; }
 
+  /* ===== LEVEL FILTER ===== */
+  .level-filter {
+    display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .level-btn {
+    padding: 8px 20px; border-radius: 20px; border: 2px solid #e0e0e0;
+    background: #fff; font-size: 14px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; transition: all 0.2s; color: #70757a;
+    touch-action: manipulation; min-height: 40px;
+  }
+  .level-btn:hover { border-color: #673ab7; color: #673ab7; }
+  .level-btn.active { background: #673ab7; border-color: #673ab7; color: #fff; }
+  .level-btn.n1.active { background: #673ab7; border-color: #673ab7; }
+  .level-btn.n2.active { background: #1976d2; border-color: #1976d2; }
+  .level-btn.n3.active { background: #2e7d32; border-color: #2e7d32; }
+
   /* ===== TEST SELECTOR ===== */
   .test-selector-card {
     background: #fff; border-radius: 8px; padding: 20px 24px;
@@ -392,6 +409,11 @@
     <!-- Test selector -->
     <div class="test-selector-card">
       <label>テストを選択</label>
+      <div class="level-filter">
+        <button class="level-btn n1 active" id="levelBtnN1" onclick="setLevel('N1')">N1</button>
+        <button class="level-btn n2" id="levelBtnN2" onclick="setLevel('N2')">N2</button>
+        <button class="level-btn n3" id="levelBtnN3" onclick="setLevel('N3')">N3</button>
+      </div>
       <div class="test-selector-wrap">
         <select class="test-select" id="testSelect" onchange="onTestSelectChange()">
           <option value="">-- テストを選んでください --</option>
@@ -469,7 +491,20 @@
       <h2>➕ 新しいテストを追加</h2>
 
       <h3>テストタイトル</h3>
-      <input type="text" id="newTestTitle" placeholder="例：第2課 動作・行動（Lesson 2）" style="margin-bottom:16px;">
+      <input type="text" id="newTestTitle" placeholder="例：第2課 動作・行動（Lesson 2）" style="margin-bottom:12px;">
+
+      <h3>JLPTレベル</h3>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="radio" name="newTestLevel" value="N1" checked> <span style="font-weight:700;color:#673ab7;">N1</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="radio" name="newTestLevel" value="N2"> <span style="font-weight:700;color:#1976d2;">N2</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="radio" name="newTestLevel" value="N3"> <span style="font-weight:700;color:#2e7d32;">N3</span>
+        </label>
+      </div>
 
       <h3>方法1：スクショから自動生成（AI解析）</h3>
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('imgInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
@@ -545,14 +580,16 @@ let GAS_URL = GAS_URL_DEFAULT;
 let allRecords = [];
 let sortByScore = false;
 let isTeacher = false;
-let tests = []; // [{id, title, createdAt, sections:[{heading,instruction,choices,questions:[{text,correct}]}]}]
+let tests = []; // [{id, title, level, createdAt, sections:[...]}]
 let currentTestId = null;
 let pendingImageBase64 = null;
+let currentLevel = 'N1';
 
 // ===== BUILT-IN TEST (Lesson 1) =====
 const BUILTIN_TEST = {
   id: 'builtin-lesson1',
   title: '第1課：外見・性格・様子',
+  level: 'N1',
   createdAt: '2024-01-01',
   builtin: true,
   sections: [
@@ -607,6 +644,7 @@ const BUILTIN_TEST = {
 const BUILTIN_TEST2 = {
   id: 'builtin-lesson2',
   title: '第2課：感情・気持ち',
+  level: 'N1',
   createdAt: '2024-01-01',
   builtin: true,
   sections: [
@@ -720,25 +758,39 @@ const BUILTIN_TEST2 = {
   renderDashboard();
 })();
 
+// ===== LEVEL FILTER =====
+function setLevel(level) {
+  currentLevel = level;
+  ['N1','N2','N3'].forEach(function(l) {
+    const btn = document.getElementById('levelBtn' + l);
+    if (btn) btn.className = 'level-btn ' + l.toLowerCase() + (l === level ? ' active' : '');
+  });
+  populateTestSelect();
+}
+
 // ===== POPULATE TEST SELECT =====
 function populateTestSelect() {
   const sel = document.getElementById('testSelect');
   sel.innerHTML = '<option value="">-- テストを選んでください --</option>';
 
-  // Built-in tests
+  // Built-in tests filtered by level
   [BUILTIN_TEST, BUILTIN_TEST2].forEach(function(bt) {
-    const opt = document.createElement('option');
-    opt.value = bt.id;
-    opt.textContent = bt.title;
-    sel.appendChild(opt);
+    if ((bt.level || 'N1') === currentLevel) {
+      const opt = document.createElement('option');
+      opt.value = bt.id;
+      opt.textContent = bt.title;
+      sel.appendChild(opt);
+    }
   });
 
-  // User-added tests
+  // User-added tests filtered by level
   tests.forEach(function(t) {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.title;
-    sel.appendChild(opt);
+    if ((t.level || 'N1') === currentLevel) {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.title;
+      sel.appendChild(opt);
+    }
   });
 }
 
@@ -1221,9 +1273,13 @@ function saveNewTest() {
   try { parsed = JSON.parse(jsonStr); } catch(e) { alert('JSONの形式が正しくありません: ' + e.message); return; }
   if (!parsed.sections || !Array.isArray(parsed.sections)) { alert('JSONに "sections" 配列が必要です。'); return; }
 
+  const levelRadio = document.querySelector('input[name="newTestLevel"]:checked');
+  const level = levelRadio ? levelRadio.value : 'N1';
+
   const newTest = {
     id: 'test-' + Date.now(),
     title: title,
+    level: level,
     createdAt: new Date().toISOString().slice(0,10),
     sections: parsed.sections
   };
@@ -1258,7 +1314,9 @@ function renderTestListManage() {
   tests.forEach(function(t) {
     const qCount = t.sections.reduce(function(s,sec){ return s + (sec.questions ? sec.questions.length : 0); }, 0);
     html += '<div class="test-item-manage">';
-    html += '<div><div class="test-name">' + escHtml(t.title) + '</div><div class="test-meta">' + t.createdAt + ' · ' + qCount + '問</div></div>';
+    const lvl = t.level || 'N1';
+    const lvlColor = lvl === 'N1' ? '#673ab7' : lvl === 'N2' ? '#1976d2' : '#2e7d32';
+    html += '<div><div class="test-name"><span style="background:' + lvlColor + ';color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;">' + lvl + '</span>' + escHtml(t.title) + '</div><div class="test-meta">' + t.createdAt + ' · ' + qCount + '問</div></div>';
     html += '<button class="btn-delete-test" onclick="deleteTest(\'' + t.id + '\')">削除</button>';
     html += '</div>';
   });
