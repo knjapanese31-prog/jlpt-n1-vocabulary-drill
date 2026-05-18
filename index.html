@@ -830,7 +830,24 @@ function buildStudentShareLink() {
 function updateStudentLinkPreview() {
   const input = document.getElementById('studentLinkInput');
   if (!input) return;
-  input.value = buildStudentShareLink();
+  const link = buildStudentShareLink();
+  input.value = link;
+
+  const status = document.getElementById('studentLinkStatus');
+  if (!status) return;
+  const addedTests = tests.filter(function(t) { return t && !t.builtin; });
+  if (!addedTests.length) {
+    status.textContent = '追加テストはまだありません。新しいテストを保存すると、このリンクに自動で含まれます。';
+    status.className = 'key-status';
+    return;
+  }
+  const names = addedTests.slice(-3).map(function(t) { return t.title; }).join('、');
+  const suffix = addedTests.length > 3 ? ' ほか' + (addedTests.length - 3) + '件' : '';
+  status.textContent = '共有リンクに保存済み追加テスト ' + addedTests.length + '件（' + names + suffix + '）を含めています。';
+  status.className = link.length > 7000 ? 'key-status ng' : 'key-status ok';
+  if (link.length > 7000) {
+    status.textContent += ' URLが長いため、短縮URLサービス等を使う場合はリンク全体が省略されていないか確認してください。';
+  }
 }
 
 async function copyStudentLink() {
@@ -866,9 +883,11 @@ function importSharedTestsFromUrl() {
     const payload = JSON.parse(base64UrlDecodeUtf8(decodeURIComponent(encoded)));
     const incoming = Array.isArray(payload) ? payload : (payload.tests || []);
     let changed = false;
+    let firstImportedLevel = '';
     incoming.forEach(function(raw) {
       const t = normalizeImportedTest(raw);
       if (!t) return;
+      if (!firstImportedLevel) firstImportedLevel = t.level || 'N1';
       const i = tests.findIndex(function(existing) { return existing.id === t.id; });
       if (i >= 0) tests[i] = t;
       else tests.push(t);
@@ -876,6 +895,12 @@ function importSharedTestsFromUrl() {
     });
     if (changed) {
       try { localStorage.setItem('drill_tests', JSON.stringify(tests)); } catch(e) {}
+      // 生徒用リンクから開いた直後に、共有されたテストのレベルを自動表示する。
+      // これにより、N2/N3の追加テストが初期状態のN1フィルターで隠れる問題を防ぐ。
+      if (firstImportedLevel && ['N1','N2','N3'].indexOf(firstImportedLevel) !== -1) {
+        currentLevel = firstImportedLevel;
+        setLevel(firstImportedLevel);
+      }
     }
   } catch(e) {
     console.warn('Shared tests could not be imported:', e);
