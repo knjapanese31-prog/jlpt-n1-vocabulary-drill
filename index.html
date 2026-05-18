@@ -484,6 +484,16 @@
       <div class="info-box">
         APIキーはこのブラウザのlocalStorageにのみ保存されます。外部には送信されません（スクショ解析時のみOpenAI APIに送信）。
       </div>
+
+      <h3>生徒用リンク</h3>
+      <div class="gas-row">
+        <input type="text" id="studentLinkInput" readonly placeholder="追加テストを含む生徒用リンクを生成中...">
+        <button class="btn-save-key" onclick="copyStudentLink()">コピー</button>
+      </div>
+      <div class="key-status" id="studentLinkStatus"></div>
+      <div class="info-box">
+        先生がこのブラウザで追加したテストは通常のURLだけでは生徒側に共有されません。このリンクを使うと、追加済みテストをURLに含めて生徒へ送れます。
+      </div>
     </div>
 
     <!-- Add new test -->
@@ -734,6 +744,8 @@ const BUILTIN_TEST2 = {
   const nav = document.getElementById('topNav');
   nav.style.display = 'flex';
 
+  importSharedTestsFromUrl();
+
   if (isTeacher) {
     document.getElementById('tabDashBtn').style.display = '';
     document.getElementById('tabAddBtn').style.display = '';
@@ -754,6 +766,7 @@ const BUILTIN_TEST2 = {
     renderTestListManage();
   }
 
+  updateStudentLinkPreview();
   populateTestSelect();
   renderDashboard();
 })();
@@ -773,18 +786,7 @@ function populateTestSelect() {
   const sel = document.getElementById('testSelect');
   sel.innerHTML = '<option value="">-- テストを選んでください --</option>';
 
-  // Built-in tests filtered by level
-  [BUILTIN_TEST, BUILTIN_TEST2].forEach(function(bt) {
-    if ((bt.level || 'N1') === currentLevel) {
-      const opt = document.createElement('option');
-      opt.value = bt.id;
-      opt.textContent = bt.title;
-      sel.appendChild(opt);
-    }
-  });
-
-  // User-added tests filtered by level
-  tests.forEach(function(t) {
+  getAllTests().forEach(function(t) {
     if ((t.level || 'N1') === currentLevel) {
       const opt = document.createElement('option');
       opt.value = t.id;
@@ -798,6 +800,83 @@ function onTestSelectChange() {
   // Just update selection, don't load yet
 }
 
+
+// ===== STUDENT SHARE LINK =====
+function base64UrlEncodeUtf8(str) {
+  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecodeUtf8(str) {
+  const padded = str.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - str.length % 4) % 4);
+  return decodeURIComponent(escape(atob(padded)));
+}
+
+function getBaseStudentUrl() {
+  return location.origin + location.pathname;
+}
+
+function buildStudentShareLink() {
+  const addedTests = tests.filter(function(t) { return t && !t.builtin; });
+  const payload = { version: 1, tests: addedTests };
+  if (addedTests.length === 0) return getBaseStudentUrl();
+  return getBaseStudentUrl() + '?sharedTests=' + encodeURIComponent(base64UrlEncodeUtf8(JSON.stringify(payload)));
+}
+
+function updateStudentLinkPreview() {
+  const input = document.getElementById('studentLinkInput');
+  if (!input) return;
+  input.value = buildStudentShareLink();
+}
+
+async function copyStudentLink() {
+  const link = buildStudentShareLink();
+  updateStudentLinkPreview();
+  const status = document.getElementById('studentLinkStatus');
+  try {
+    await navigator.clipboard.writeText(link);
+    if (status) { status.textContent = '✅ 生徒用リンクをコピーしました。'; status.className = 'key-status ok'; }
+  } catch(e) {
+    const input = document.getElementById('studentLinkInput');
+    if (input) { input.focus(); input.select(); }
+    if (status) { status.textContent = 'リンクを選択状態にしました。コピーして生徒へ送ってください。'; status.className = 'key-status ok'; }
+  }
+}
+
+function normalizeImportedTest(t) {
+  if (!t || !t.title || !Array.isArray(t.sections)) return null;
+  return {
+    id: t.id || ('shared-' + Date.now() + '-' + Math.random().toString(36).slice(2)),
+    title: String(t.title),
+    level: t.level || 'N1',
+    createdAt: t.createdAt || new Date().toISOString().slice(0,10),
+    sections: t.sections
+  };
+}
+
+function importSharedTestsFromUrl() {
+  let encoded = '';
+  try { encoded = new URLSearchParams(location.search).get('sharedTests') || ''; } catch(e) { encoded = ''; }
+  if (!encoded) return;
+  try {
+    const payload = JSON.parse(base64UrlDecodeUtf8(decodeURIComponent(encoded)));
+    const incoming = Array.isArray(payload) ? payload : (payload.tests || []);
+    let changed = false;
+    incoming.forEach(function(raw) {
+      const t = normalizeImportedTest(raw);
+      if (!t) return;
+      const i = tests.findIndex(function(existing) { return existing.id === t.id; });
+      if (i >= 0) tests[i] = t;
+      else tests.push(t);
+      changed = true;
+    });
+    if (changed) {
+      try { localStorage.setItem('drill_tests', JSON.stringify(tests)); } catch(e) {}
+    }
+  } catch(e) {
+    console.warn('Shared tests could not be imported:', e);
+  }
+}
+
 function loadSelectedTest() {
   const sel = document.getElementById('testSelect');
   const id = sel.value;
@@ -808,10 +887,23 @@ function loadSelectedTest() {
   renderQuiz(test);
 }
 
+function getBuiltinTests() {
+  return [BUILTIN_TEST, BUILTIN_TEST2];
+}
+
+function getAllTests() {
+  const byId = {};
+  const merged = [];
+  getBuiltinTests().concat(tests).forEach(function(t) {
+    if (!t || !t.id || byId[t.id]) return;
+    byId[t.id] = true;
+    merged.push(t);
+  });
+  return merged;
+}
+
 function getTestById(id) {
-  if (id === BUILTIN_TEST.id) return BUILTIN_TEST;
-  if (id === BUILTIN_TEST2.id) return BUILTIN_TEST2;
-  return tests.find(function(t) { return t.id === id; }) || null;
+  return getAllTests().find(function(t) { return t.id === id; }) || null;
 }
 
 // ===== RENDER QUIZ =====
@@ -1289,6 +1381,7 @@ function saveNewTest() {
 
   populateTestSelect();
   renderTestListManage();
+  updateStudentLinkPreview();
 
   // Reset form
   document.getElementById('newTestTitle').value = '';
@@ -1331,6 +1424,7 @@ function deleteTest(id) {
   try { localStorage.setItem('drill_tests', JSON.stringify(tests)); } catch(e) {}
   populateTestSelect();
   renderTestListManage();
+  updateStudentLinkPreview();
 }
 </script>
 </body>
