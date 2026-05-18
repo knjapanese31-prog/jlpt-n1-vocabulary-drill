@@ -482,7 +482,7 @@
       </div>
       <div class="key-status" id="keyStatus"></div>
       <div class="info-box">
-        Claude APIキーはこのブラウザのlocalStorageにのみ保存されます。外部には送信されません（スクショから語彙を抽出し、元画像と違う新しい問題を生成する時のみAnthropic APIに送信）。
+        Claude APIキーはこのブラウザのlocalStorageにのみ保存されます。外部には送信されません（スクショから語彙を抽出し、元画像と違う新しい問題を生成する時のみAnthropic APIに送信）。現在の生成モデルは Claude Sonnet 4.6 です。
       </div>
 
       <h3>生徒用リンク</h3>
@@ -1345,7 +1345,7 @@ async function analyzeImage() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         messages: [{
           role: 'user',
@@ -1356,8 +1356,11 @@ async function analyzeImage() {
         }]
       })
     });
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error.message || data.error.type || 'Claude API error');
+    const data = await resp.json().catch(function(){ return {}; });
+    if (!resp.ok || data.error) {
+      const apiMessage = data.error ? (data.error.message || data.error.type) : ('HTTP ' + resp.status);
+      throw new Error(apiMessage || 'Claude API error');
+    }
     let content = (data.content || []).filter(function(part){ return part.type === 'text'; }).map(function(part){ return part.text; }).join('\n').trim();
     if (!content) throw new Error('Claudeからテキストが返りませんでした。');
     // Extract JSON from markdown code block if present
