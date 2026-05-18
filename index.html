@@ -475,14 +475,14 @@
       </div>
       <div class="key-status" id="gasStatus"></div>
 
-      <h3>OpenAI API キー（スクショ解析用）</h3>
+      <h3>Claude API キー（語彙抽出・問題生成用）</h3>
       <div class="api-key-row">
-        <input type="password" id="openaiKeyInput" placeholder="sk-...">
-        <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+        <input type="password" id="claudeKeyInput" placeholder="sk-ant-...">
+        <button class="btn-save-key" onclick="saveClaudeKey()">保存</button>
       </div>
       <div class="key-status" id="keyStatus"></div>
       <div class="info-box">
-        APIキーはこのブラウザのlocalStorageにのみ保存されます。外部には送信されません（スクショ解析時のみOpenAI APIに送信）。
+        Claude APIキーはこのブラウザのlocalStorageにのみ保存されます。外部には送信されません（スクショから語彙を抽出し、元画像と違う新しい問題を生成する時のみAnthropic APIに送信）。
       </div>
 
       <h3>生徒用リンク</h3>
@@ -516,17 +516,17 @@
         </label>
       </div>
 
-      <h3>方法1：スクショから自動生成（AI解析）</h3>
+      <h3>方法1：スクショの語彙から自動生成（Claude）</h3>
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('imgInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
         <div class="upload-icon">🖼️</div>
         <p>クリックまたはドラッグ＆ドロップで<br>テキストのスクショを追加</p>
         <input type="file" id="imgInput" accept="image/*" onchange="onImageSelected(event)">
       </div>
       <img id="previewImg" class="preview-img" alt="プレビュー">
-      <button class="btn-analyze" id="btnAnalyze" onclick="analyzeImage()" disabled>🤖 AIで問題を解析</button>
+      <button class="btn-analyze" id="btnAnalyze" onclick="analyzeImage()" disabled>🤖 Claudeで新しい問題を生成</button>
 
       <div class="analysis-result" id="analysisResult">
-        <h4>解析結果（JSON）— 編集可能</h4>
+        <h4>生成結果（JSON）— 編集可能</h4>
         <textarea id="analysisJson" rows="20" style="font-size:12px;font-family:monospace;width:100%;border:1px solid #e0d6f0;border-radius:4px;padding:8px;background:#fff;"></textarea>
       </div>
 
@@ -593,6 +593,7 @@ let isTeacher = false;
 let tests = []; // [{id, title, level, createdAt, sections:[...]}]
 let currentTestId = null;
 let pendingImageBase64 = null;
+let pendingImageMimeType = 'image/jpeg';
 let currentLevel = 'N1';
 
 // ===== BUILT-IN TEST (Lesson 1) =====
@@ -751,11 +752,15 @@ const BUILTIN_TEST2 = {
     document.getElementById('tabAddBtn').style.display = '';
     // Populate settings
     try {
-      const k = localStorage.getItem('openai_key');
-      if (k) {
-        document.getElementById('openaiKeyInput').value = k;
-        document.getElementById('keyStatus').textContent = '✅ 保存済み';
+      const claudeKey = localStorage.getItem('claude_key') || '';
+      const oldOpenAiKey = localStorage.getItem('openai_key') || '';
+      if (claudeKey) {
+        document.getElementById('claudeKeyInput').value = claudeKey;
+        document.getElementById('keyStatus').textContent = '✅ Claude APIキー保存済み';
         document.getElementById('keyStatus').className = 'key-status ok';
+      } else if (oldOpenAiKey) {
+        document.getElementById('keyStatus').textContent = '⚠️ 以前のOpenAIキーが残っています。Claude APIキーを入力して保存してください。';
+        document.getElementById('keyStatus').className = 'key-status ng';
       }
       document.getElementById('gasUrlInput').value = GAS_URL;
       if (GAS_URL !== GAS_URL_DEFAULT) {
@@ -1251,11 +1256,11 @@ function saveGasUrl() {
   document.getElementById('gasStatus').className = 'key-status ok';
 }
 
-function saveApiKey() {
-  const key = document.getElementById('openaiKeyInput').value.trim();
-  if (!key.startsWith('sk-')) { alert('OpenAI APIキーは sk- で始まります。'); return; }
-  try { localStorage.setItem('openai_key', key); } catch(e) {}
-  document.getElementById('keyStatus').textContent = '✅ 保存済み';
+function saveClaudeKey() {
+  const key = document.getElementById('claudeKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) { alert('Claude APIキーは sk-ant- で始まります。'); return; }
+  try { localStorage.setItem('claude_key', key); } catch(e) {}
+  document.getElementById('keyStatus').textContent = '✅ Claude APIキー保存済み';
   document.getElementById('keyStatus').className = 'key-status ok';
 }
 
@@ -1275,6 +1280,7 @@ function onImageSelected(e) {
 function processImageFile(file) {
   const reader = new FileReader();
   reader.onload = function(ev) {
+    pendingImageMimeType = file.type || 'image/jpeg';
     pendingImageBase64 = ev.target.result.split(',')[1];
     const img = document.getElementById('previewImg');
     img.src = ev.target.result;
@@ -1288,56 +1294,72 @@ function processImageFile(file) {
 async function analyzeImage() {
   if (!pendingImageBase64) { alert('画像を選択してください。'); return; }
   let apiKey = '';
-  try { apiKey = localStorage.getItem('openai_key') || ''; } catch(e) {}
-  if (!apiKey) { alert('OpenAI APIキーを設定してください（テスト追加タブ → 設定）。'); return; }
+  try { apiKey = localStorage.getItem('claude_key') || ''; } catch(e) {}
+  if (!apiKey) { alert('Claude APIキーを設定してください（テスト追加タブ → 設定）。'); return; }
 
-  document.getElementById('overlayMsg').textContent = 'AIで問題を解析中...';
+  document.getElementById('overlayMsg').textContent = 'Claudeで語彙を抽出し、新しい問題を生成中...';
   document.getElementById('sendingOverlay').classList.add('show');
   document.getElementById('btnAnalyze').disabled = true;
 
-  const prompt = `この画像はJLPT N1の語彙テストのテキストです。
-画像に含まれるすべての問題を以下のJSON形式で抽出してください。
-セクション（大問）ごとにまとめ、各問題の正解も含めてください。
+  const level = (document.querySelector('input[name="newTestLevel"]:checked') || {}).value || 'N1';
+  const prompt = `あなたはJLPT ${level}向けの日本語語彙テスト作成者です。
+この画像から、学習対象になる語彙・表現だけを抽出してください。画像内の問題文・例文・選択肢をそのままコピーしてはいけません。
+抽出した語彙を使って、元のスクショとは内容・文脈・語順・選択肢配置を変えた、新しい語彙問題を作成してください。
 
-必ず以下のJSON形式のみで返答してください（説明文は不要）：
+作成方針：
+- スクショから「習う語彙」はできるだけ漏れなく拾う
+- 問題文は完全に新作し、元画像の文をそのまま使わない
+- 各問題は自然な日本語の空欄補充、意味選択、用法選択などにする
+- 正解以外の選択肢も同レベルの紛らわしい語彙にする
+- 学習語彙が多い場合は、セクションを分けてすべて出題する
+- 正解は必ず一つにする
+
+必ず以下のJSON形式のみで返答してください（説明文、Markdown、コードブロックは不要）：
 {
   "sections": [
     {
       "heading": "大問1",
-      "instruction": "問題の指示文",
+      "instruction": "最も適切な語を選びなさい。",
       "choices": ["a. 選択肢1", "b. 選択肢2", "c. 選択肢3", "d. 選択肢4"],
       "questions": [
-        { "text": "①問題文", "correct": "a" },
-        { "text": "②問題文", "correct": "b" }
+        { "text": "①新しく作った問題文（　　　）", "correct": "a" },
+        { "text": "②新しく作った問題文（　　　）", "correct": "b" }
       ]
     }
   ]
 }
 
 注意：
-- choicesは共通選択肢がある場合のみ。問題文に選択肢が含まれる場合はchoicesを空配列にする
+- choicesは共通選択肢がある場合のみ。問題ごとに選択肢を入れる場合は、問題文の中に「（a. ...　b. ...　c. ...　d. ...）」の形で入れ、choicesは空配列にする
 - correctは正解の選択肢の文字（a/b/c/d/e）
-- 正解が不明な場合は "?" とする`;
+- 画像が見にくい語彙は推測で断定せず、出題から外してよい
+- 元画像の問題と同じ文章・同じ例文・同じ選択肢セットを作らない`;
 
   try {
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4000,
         messages: [{
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + pendingImageBase64, detail: 'high' } }
+            { type: 'image', source: { type: 'base64', media_type: pendingImageMimeType, data: pendingImageBase64 } }
           ]
-        }],
-        max_tokens: 4000
+        }]
       })
     });
     const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
-    let content = data.choices[0].message.content.trim();
+    if (data.error) throw new Error(data.error.message || data.error.type || 'Claude API error');
+    let content = (data.content || []).filter(function(part){ return part.type === 'text'; }).map(function(part){ return part.text; }).join('\n').trim();
+    if (!content) throw new Error('Claudeからテキストが返りませんでした。');
     // Extract JSON from markdown code block if present
     const match = content.match(/```(?:json)?\s*([\s\S]+?)```/);
     if (match) content = match[1].trim();
@@ -1391,6 +1413,7 @@ function saveNewTest() {
   document.getElementById('previewImg').style.display = 'none';
   document.getElementById('btnAnalyze').disabled = true;
   pendingImageBase64 = null;
+  pendingImageMimeType = 'image/jpeg';
 
   alert('テスト「' + title + '」を保存しました！');
 }
