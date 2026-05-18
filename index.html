@@ -948,7 +948,14 @@ function renderQuiz(test) {
       const name = 'q' + qIndex;
       // Determine choices for this question
       let choiceLetters = [];
-      if (sec.choices && sec.choices.length) {
+      if (q.choices && Array.isArray(q.choices) && q.choices.length) {
+        q.choices.forEach(function(c, idx) {
+          const label = String(c || '').trim();
+          const m = label.match(/^([a-e])\./i);
+          const letter = m ? m[1].toLowerCase() : String.fromCharCode(97 + idx);
+          choiceLetters.push({ letter: letter, label: label || (letter + '.') });
+        });
+      } else if (sec.choices && sec.choices.length) {
         sec.choices.forEach(function(c) {
           const letter = c.trim().charAt(0).toLowerCase();
           choiceLetters.push({ letter: letter, label: c });
@@ -1306,32 +1313,52 @@ async function analyzeImage() {
 この画像から、学習対象になる語彙・表現だけを抽出してください。画像内の問題文・例文・選択肢をそのままコピーしてはいけません。
 抽出した語彙を使って、元のスクショとは内容・文脈・語順・選択肢配置を変えた、新しい語彙問題を作成してください。
 
+最重要ルール：
+- 各問題は必ず「その問題専用の choices」を持たせる。sectionの共通choicesは使わず、必ず空配列 [] にする
+- 1問ごとに自然な文になるよう、選択肢の活用形・助詞・表記を問題文に合わせる
+- 例：学習語彙が「両替する」で、文が「1万円札を（　　　）もらえますか。」なら、選択肢は「a. 両替して」のように文法的に入る形にする
+- 正解を空欄に入れた文が自然で、ほかの3つを入れた文は意味または文法が明らかに不自然になるようにする
+- 同じ4つの選択肢セットを複数の問題で使い回さない。特に、銀行・お金など同じ場面の問題でも各問に合う選択肢を作り直す
+- 正解は必ず一つだけにする。二つ以上入りそうな問題は作り直す
+
 作成方針：
 - スクショから「習う語彙」はできるだけ漏れなく拾う
 - 問題文は完全に新作し、元画像の文をそのまま使わない
-- 各問題は自然な日本語の空欄補充、意味選択、用法選択などにする
-- 正解以外の選択肢も同レベルの紛らわしい語彙にする
-- 学習語彙が多い場合は、セクションを分けてすべて出題する
-- 正解は必ず一つにする
+- 各問題は自然な日本語の空欄補充を基本にする
+- 語彙の辞書形を学習対象にしたい場合でも、選択肢には文脈に合う活用形を出してよい
+- 正解以外の選択肢も同レベルの紛らわしい語彙にするが、文に入れた時に正解と同じ意味にならないようにする
+- 生成後、自分で全問を見直し、正解文が自然か、誤答が自然に入りすぎないか確認してから返す
 
 必ず以下のJSON形式のみで返答してください（説明文、Markdown、コードブロックは不要）：
 {
   "sections": [
     {
       "heading": "大問1",
-      "instruction": "最も適切な語を選びなさい。",
-      "choices": ["a. 選択肢1", "b. 選択肢2", "c. 選択肢3", "d. 選択肢4"],
+      "instruction": "つぎの（　　　）に合うものを一つ選びなさい。",
+      "choices": [],
       "questions": [
-        { "text": "①新しく作った問題文（　　　）", "correct": "a" },
-        { "text": "②新しく作った問題文（　　　）", "correct": "b" }
+        {
+          "text": "①銀行で1万円札を（　　　）もらった。",
+          "choices": ["a. 両替して", "b. 振り込んで", "c. 引き出して", "d. 預けて"],
+          "correct": "a",
+          "targetVocabulary": "両替する"
+        },
+        {
+          "text": "②家賃を大家さんの口座に（　　　）。",
+          "choices": ["a. 振り込んだ", "b. 崩した", "c. 両替した", "d. ほどいた"],
+          "correct": "a",
+          "targetVocabulary": "振り込む"
+        }
       ]
     }
   ]
 }
 
 注意：
-- choicesは共通選択肢がある場合のみ。問題ごとに選択肢を入れる場合は、問題文の中に「（a. ...　b. ...　c. ...　d. ...）」の形で入れ、choicesは空配列にする
-- correctは正解の選択肢の文字（a/b/c/d/e）
+- section.choices は必ず [] にする
+- 各 question に text, choices, correct, targetVocabulary を必ず入れる
+- choices は必ず4つ、形式は「a. 語」「b. 語」「c. 語」「d. 語」にする
+- correct は正解の選択肢の文字（a/b/c/d）
 - 画像が見にくい語彙は推測で断定せず、出題から外してよい
 - 元画像の問題と同じ文章・同じ例文・同じ選択肢セットを作らない`;
 
@@ -1367,6 +1394,10 @@ async function analyzeImage() {
     const match = content.match(/```(?:json)?\s*([\s\S]+?)```/);
     if (match) content = match[1].trim();
 
+    const generatedTest = JSON.parse(content);
+    validateGeneratedTestQuality(generatedTest);
+    content = JSON.stringify(generatedTest, null, 2);
+
     document.getElementById('analysisJson').value = content;
     document.getElementById('analysisResult').style.display = 'block';
     document.getElementById('manualJson').value = content;
@@ -1376,6 +1407,64 @@ async function analyzeImage() {
 
   document.getElementById('sendingOverlay').classList.remove('show');
   document.getElementById('btnAnalyze').disabled = false;
+}
+
+
+function validateGeneratedTestQuality(testData) {
+  if (!testData || !Array.isArray(testData.sections) || !testData.sections.length) {
+    throw new Error('生成JSONに sections 配列がありません。');
+  }
+  const errors = [];
+  const seenChoiceSets = {};
+  let questionCount = 0;
+  testData.sections.forEach(function(sec, secIndex) {
+    if (sec.choices && sec.choices.length) {
+      errors.push('大問' + (secIndex + 1) + ': 共通 choices は使わず [] にしてください。');
+    }
+    if (!Array.isArray(sec.questions) || !sec.questions.length) {
+      errors.push('大問' + (secIndex + 1) + ': questions がありません。');
+      return;
+    }
+    sec.questions.forEach(function(q, qIndex) {
+      questionCount++;
+      const label = '大問' + (secIndex + 1) + ' Q' + (qIndex + 1);
+      if (!q.text || typeof q.text !== 'string') errors.push(label + ': text がありません。');
+      if (!Array.isArray(q.choices) || q.choices.length !== 4) {
+        errors.push(label + ': 問題ごとの choices を4つ入れてください。');
+        return;
+      }
+      const letters = [];
+      const choiceBodies = [];
+      q.choices.forEach(function(c) {
+        const choiceText = String(c || '').trim();
+        const m = choiceText.match(/^([a-d])\.\s*(.+)$/i);
+        if (!m) errors.push(label + ': choices は「a. 語」の形式にしてください。');
+        if (m) {
+          letters.push(m[1].toLowerCase());
+          choiceBodies.push(m[2].replace(/\s+/g, '').toLowerCase());
+        }
+      });
+      const uniqueLetters = Array.from(new Set(letters));
+      if (uniqueLetters.length !== 4 || !['a','b','c','d'].every(function(x){ return letters.indexOf(x) !== -1; })) {
+        errors.push(label + ': choices は a, b, c, d を一つずつ使ってください。');
+      }
+      if (!q.correct || ['a','b','c','d'].indexOf(String(q.correct).toLowerCase()) === -1) {
+        errors.push(label + ': correct は a/b/c/d のいずれかにしてください。');
+      }
+      const uniqueBodies = Array.from(new Set(choiceBodies));
+      if (uniqueBodies.length < 4) errors.push(label + ': 同じ選択肢が重複しています。');
+      const choiceSetKey = choiceBodies.slice().sort().join('|');
+      if (choiceSetKey) {
+        seenChoiceSets[choiceSetKey] = (seenChoiceSets[choiceSetKey] || 0) + 1;
+        if (seenChoiceSets[choiceSetKey] > 1) errors.push(label + ': 同じ選択肢セットを複数問題で使い回しています。');
+      }
+    });
+  });
+  if (!questionCount) errors.push('問題がありません。');
+  if (errors.length) {
+    throw new Error('生成結果の形式を改善してください。' + errors.slice(0, 5).join(' / '));
+  }
+  return true;
 }
 
 // ===== SAVE NEW TEST =====
