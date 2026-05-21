@@ -422,6 +422,19 @@
       </div>
     </div>
 
+    <!-- Share locally added/imported tests -->
+    <div class="test-selector-card" id="testShareCard" style="display:none;">
+      <label>追加テストを先生へ共有</label>
+      <div class="gas-row">
+        <input type="text" id="teacherImportLinkInput" readonly placeholder="追加テストを含む先生用リンクを生成中...">
+        <button class="btn-save-key" onclick="copyTeacherImportLink()">コピー</button>
+      </div>
+      <div class="key-status" id="teacherImportLinkStatus"></div>
+      <div class="info-box">
+        追加テストはこのブラウザ内に保存されます。別の端末や先生側に表示するには、このリンクを先生に送ってください。先生が開くと追加テストが取り込まれます。
+      </div>
+    </div>
+
     <div class="score-banner" id="scoreBanner">
       <div class="score-num" id="scoreNum">0</div>
       <div class="score-total" id="scoreTotal">/ 0 問正解</div>
@@ -771,7 +784,7 @@ const BUILTIN_TEST2 = {
     renderTestListManage();
   }
 
-  updateStudentLinkPreview();
+  updateShareLinkPreviews();
   populateTestSelect();
   renderDashboard();
 })();
@@ -820,48 +833,110 @@ function getBaseStudentUrl() {
   return location.origin + location.pathname;
 }
 
-function buildStudentShareLink() {
-  const addedTests = tests.filter(function(t) { return t && !t.builtin; });
-  const payload = { version: 1, tests: addedTests };
-  if (addedTests.length === 0) return getBaseStudentUrl();
-  return getBaseStudentUrl() + '?sharedTests=' + encodeURIComponent(base64UrlEncodeUtf8(JSON.stringify(payload)));
+function getAddedTests() {
+  return tests.filter(function(t) { return t && !t.builtin; });
 }
 
-function updateStudentLinkPreview() {
-  const input = document.getElementById('studentLinkInput');
-  if (!input) return;
-  const link = buildStudentShareLink();
-  input.value = link;
+function buildSharedTestsLink(options) {
+  const addedTests = getAddedTests();
+  const payload = { version: 1, tests: addedTests };
+  const params = [];
+  if (options && options.teacherMode) params.push('mode=teacher');
+  if (addedTests.length) params.push('sharedTests=' + encodeURIComponent(base64UrlEncodeUtf8(JSON.stringify(payload))));
+  return getBaseStudentUrl() + (params.length ? '?' + params.join('&') : '');
+}
 
-  const status = document.getElementById('studentLinkStatus');
+function buildStudentShareLink() {
+  return buildSharedTestsLink({ teacherMode: false });
+}
+
+function buildTeacherImportLink() {
+  return buildSharedTestsLink({ teacherMode: true });
+}
+
+function updateLinkPreview(inputId, statusId, link, emptyMessage, filledPrefix) {
+  const input = document.getElementById(inputId);
+  if (input) input.value = link;
+
+  const status = document.getElementById(statusId);
   if (!status) return;
-  const addedTests = tests.filter(function(t) { return t && !t.builtin; });
+  const addedTests = getAddedTests();
   if (!addedTests.length) {
-    status.textContent = '追加テストはまだありません。新しいテストを保存すると、このリンクに自動で含まれます。';
+    status.textContent = emptyMessage;
     status.className = 'key-status';
     return;
   }
   const names = addedTests.slice(-3).map(function(t) { return t.title; }).join('、');
   const suffix = addedTests.length > 3 ? ' ほか' + (addedTests.length - 3) + '件' : '';
-  status.textContent = '共有リンクに保存済み追加テスト ' + addedTests.length + '件（' + names + suffix + '）を含めています。';
+  status.textContent = filledPrefix + ' ' + addedTests.length + '件（' + names + suffix + '）を含めています。';
   status.className = link.length > 7000 ? 'key-status ng' : 'key-status ok';
   if (link.length > 7000) {
     status.textContent += ' URLが長いため、短縮URLサービス等を使う場合はリンク全体が省略されていないか確認してください。';
   }
 }
 
-async function copyStudentLink() {
-  const link = buildStudentShareLink();
+function updateStudentLinkPreview() {
+  updateLinkPreview(
+    'studentLinkInput',
+    'studentLinkStatus',
+    buildStudentShareLink(),
+    '追加テストはまだありません。新しいテストを保存すると、このリンクに自動で含まれます。',
+    '共有リンクに保存済み追加テスト'
+  );
+}
+
+function updateTeacherImportLinkPreview() {
+  const card = document.getElementById('testShareCard');
+  const addedTests = getAddedTests();
+  if (card) card.style.display = addedTests.length ? '' : 'none';
+  updateLinkPreview(
+    'teacherImportLinkInput',
+    'teacherImportLinkStatus',
+    buildTeacherImportLink(),
+    '追加テストはまだありません。',
+    '先生用リンクに追加テスト'
+  );
+}
+
+function updateShareLinkPreviews() {
   updateStudentLinkPreview();
-  const status = document.getElementById('studentLinkStatus');
+  updateTeacherImportLinkPreview();
+}
+
+async function copyLinkToClipboard(link, inputId, statusId, successMessage, fallbackMessage) {
+  const status = document.getElementById(statusId);
   try {
     await navigator.clipboard.writeText(link);
-    if (status) { status.textContent = '✅ 生徒用リンクをコピーしました。'; status.className = 'key-status ok'; }
+    if (status) { status.textContent = successMessage; status.className = 'key-status ok'; }
   } catch(e) {
-    const input = document.getElementById('studentLinkInput');
+    const input = document.getElementById(inputId);
     if (input) { input.focus(); input.select(); }
-    if (status) { status.textContent = 'リンクを選択状態にしました。コピーして生徒へ送ってください。'; status.className = 'key-status ok'; }
+    if (status) { status.textContent = fallbackMessage; status.className = 'key-status ok'; }
   }
+}
+
+async function copyStudentLink() {
+  const link = buildStudentShareLink();
+  updateShareLinkPreviews();
+  await copyLinkToClipboard(
+    link,
+    'studentLinkInput',
+    'studentLinkStatus',
+    '✅ 生徒用リンクをコピーしました。',
+    'リンクを選択状態にしました。コピーして生徒へ送ってください。'
+  );
+}
+
+async function copyTeacherImportLink() {
+  const link = buildTeacherImportLink();
+  updateShareLinkPreviews();
+  await copyLinkToClipboard(
+    link,
+    'teacherImportLinkInput',
+    'teacherImportLinkStatus',
+    '✅ 先生用リンクをコピーしました。このリンクを先生に送ってください。',
+    'リンクを選択状態にしました。コピーして先生へ送ってください。'
+  );
 }
 
 function normalizeImportedTest(t) {
@@ -915,6 +990,7 @@ function loadSelectedTest() {
   const test = getTestById(id);
   if (!test) { alert('テストが見つかりません。'); return; }
   renderQuiz(test);
+  updateShareLinkPreviews();
 }
 
 function getBuiltinTests() {
@@ -1527,7 +1603,7 @@ function saveNewTest() {
 
   populateTestSelect();
   renderTestListManage();
-  updateStudentLinkPreview();
+  updateShareLinkPreviews();
 
   // Reset form
   document.getElementById('newTestTitle').value = '';
@@ -1571,7 +1647,7 @@ function deleteTest(id) {
   try { localStorage.setItem('drill_tests', JSON.stringify(tests)); } catch(e) {}
   populateTestSelect();
   renderTestListManage();
-  updateStudentLinkPreview();
+  updateShareLinkPreviews();
 }
 </script>
 </body>
