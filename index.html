@@ -384,10 +384,183 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 12px;
   }
   .no-test-msg .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* ===== LANDING PAGE ===== */
+  #landingPage {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px 60px;
+    background: #f0ebf8;
+    position: relative;
+  }
+  #landingPage.show { display: flex; }
+
+  /* 右上の教師ボタン */
+  .landing-teacher-corner {
+    position: absolute;
+    top: 16px; right: 16px;
+  }
+  .corner-teacher-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 14px; border-radius: 20px;
+    border: 1.5px solid #c5b3e6; background: #fff;
+    color: #673ab7; font-size: 12px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .corner-teacher-btn:hover {
+    background: #f3e8ff; border-color: #673ab7;
+    box-shadow: 0 2px 8px rgba(103,58,183,0.15);
+  }
+
+  .landing-title {
+    font-size: 28px; font-weight: 700; color: #202124;
+    text-align: center; margin-bottom: 6px; line-height: 1.4;
+  }
+  .landing-title .lv-badge {
+    color: #673ab7; transition: color 0.2s;
+  }
+  .landing-title .lv-badge.lv-n3 { color: #2e7d32; }
+  .landing-title .lv-badge.lv-n2 { color: #1976d2; }
+  .landing-title .lv-badge.lv-n1 { color: #673ab7; }
+
+  .landing-desc {
+    font-size: 14px; color: #70757a; text-align: center;
+    margin-bottom: 28px; line-height: 1.7;
+  }
+
+  .landing-level-label {
+    font-size: 13px; font-weight: 500; color: #70757a;
+    text-align: center; margin-bottom: 10px;
+  }
+
+  .landing-level-row {
+    display: flex; gap: 10px; margin-bottom: 28px;
+  }
+
+  .landing-lv-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 24px; border-radius: 14px; border: 2px solid #e0e0e0;
+    background: #fff; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s; min-width: 82px;
+  }
+  .landing-lv-btn:hover { border-color: #9e9e9e; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .landing-lv-btn .lv-label { font-size: 20px; font-weight: 700; line-height: 1; color: #555; }
+  .landing-lv-btn .lv-sub   { font-size: 11px; color: #999; margin-top: 4px; }
+
+  .landing-lv-btn.sel-n3 { background: #2e7d32; border-color: #2e7d32; transform: scale(1.06); box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+  .landing-lv-btn.sel-n3 .lv-label, .landing-lv-btn.sel-n3 .lv-sub { color: #fff; }
+  .landing-lv-btn.sel-n2 { background: #1976d2; border-color: #1976d2; transform: scale(1.06); box-shadow: 0 4px 12px rgba(25,118,210,0.3); }
+  .landing-lv-btn.sel-n2 .lv-label, .landing-lv-btn.sel-n2 .lv-sub { color: #fff; }
+  .landing-lv-btn.sel-n1 { background: #673ab7; border-color: #673ab7; transform: scale(1.06); box-shadow: 0 4px 12px rgba(103,58,183,0.3); }
+  .landing-lv-btn.sel-n1 .lv-label, .landing-lv-btn.sel-n1 .lv-sub { color: #fff; }
+
+  .landing-cards { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 440px; }
+
+  .landing-card {
+    background: #fff; border-radius: 12px; padding: 22px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #ede7f6;
+  }
+  .landing-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .landing-card-head .card-icon { font-size: 22px; }
+  .landing-card-head h2 { font-size: 16px; font-weight: 700; color: #202124; }
+  .landing-card-head .card-en { font-size: 11px; color: #9e9e9e; font-weight: 400; margin-left: 2px; }
+  .landing-card-desc { font-size: 13px; color: #70757a; line-height: 1.7; margin-bottom: 16px; }
+
+  .landing-btn-teacher {
+    display: block; width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: #202124; color: #fff; font-size: 14px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+    transition: background 0.2s; text-align: center; text-decoration: none;
+    touch-action: manipulation;
+  }
+  .landing-btn-teacher:hover { background: #3c4043; }
+
+  .landing-btn-student {
+    display: block; width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;
+    background: #fff; color: #202124; font-size: 14px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+    transition: all 0.2s; text-align: center; text-decoration: none;
+    touch-action: manipulation;
+  }
+  .landing-btn-student:hover { border-color: #9e9e9e; background: #fafafa; }
+
+  .landing-footer {
+    font-size: 12px; color: #bdbdbd; margin-top: 24px; text-align: center;
+  }
+
+  /* コピーリンク行 */
+  .landing-copy-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    background: #f5f5f5; border-radius: 8px; padding: 8px 12px;
+  }
+  .landing-copy-url {
+    flex: 1; font-size: 11px; color: #70757a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-family: monospace;
+  }
+  .landing-copy-btn {
+    flex-shrink: 0; padding: 5px 12px; border-radius: 6px; border: none;
+    background: #673ab7; color: #fff; font-size: 12px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .landing-copy-btn:hover { background: #5e35b1; }
+  .landing-copy-btn.copied { background: #2e7d32; }
 </style>
 </head>
 <body>
-<div class="app-container">
+
+<!-- ==================== LANDING PAGE ==================== -->
+<div id="landingPage">
+
+  <!-- 右上：教師ボタン -->
+  <div class="landing-teacher-corner">
+    <button class="corner-teacher-btn" onclick="goTeacher()">👨‍🏫 For Teachers →</button>
+  </div>
+
+  <h1 class="landing-title">
+    JLPT <span class="lv-badge lv-n1" id="landingBadge">N1</span> 語彙テスト
+  </h1>
+  <p class="landing-desc">教師が手軽に作成・配布でき、<br>生徒は即時採点で学べる語彙ドリル</p>
+
+  <div class="landing-level-label">レベルを選んでください</div>
+  <div class="landing-level-row">
+    <button class="landing-lv-btn" id="landingBtnN3" onclick="landingSetLevel('N3')">
+      <span class="lv-label">N3</span><span class="lv-sub">初中級</span>
+    </button>
+    <button class="landing-lv-btn" id="landingBtnN2" onclick="landingSetLevel('N2')">
+      <span class="lv-label">N2</span><span class="lv-sub">中上級</span>
+    </button>
+    <button class="landing-lv-btn sel-n1" id="landingBtnN1" onclick="landingSetLevel('N1')">
+      <span class="lv-label">N1</span><span class="lv-sub">上級</span>
+    </button>
+  </div>
+
+  <div class="landing-cards">
+    <!-- 生徒カードのみ -->
+    <div class="landing-card">
+      <div class="landing-card-head">
+        <span class="card-icon">🎓</span>
+        <div>
+          <h2>生徒として受験 <span class="card-en">For Students</span></h2>
+        </div>
+      </div>
+      <p class="landing-card-desc">
+        教師から共有された配布リンクを開くか、<br>下のボタンからドリルを選んで受験できます。
+      </p>
+      <button class="landing-btn-student" onclick="goStudent()">ドリルを選ぶ（student mode）</button>
+    </div>
+  </div>
+
+  <p class="landing-footer">v1.0 &nbsp;·&nbsp; 3大問（空欄補充 / 語義選択 / 類義語・対義語）</p>
+</div>
+
+<div class="app-container" id="appContainer" style="display:none;">
 
   <!-- Top nav (teacher mode shows extra tabs) -->
   <div class="top-nav" id="topNav" style="display:none;">
@@ -592,7 +765,7 @@
     <div class="spinner"></div>
     <p id="overlayMsg">処理中...</p>
   </div>
-</div>
+</div><!-- /appContainer -->
 
 <script>
 // ===== CONSTANTS =====
@@ -730,10 +903,96 @@ const BUILTIN_TEST2 = {
   ]
 };
 
+// ===== LANDING PAGE =====
+let landingLevel = 'N1';
+
+function landingSetLevel(lvl) {
+  landingLevel = lvl;
+  // badge
+  const badge = document.getElementById('landingBadge');
+  badge.textContent = lvl;
+  badge.className = 'lv-badge lv-' + lvl.toLowerCase();
+  // level buttons
+  ['N1','N2','N3'].forEach(function(l) {
+    const btn = document.getElementById('landingBtn' + l);
+    if (!btn) return;
+    btn.className = 'landing-lv-btn' + (l === lvl ? ' sel-' + lvl.toLowerCase() : '');
+  });
+  // teacher link preview 更新
+  updateTeacherLinkPreview();
+}
+
+function updateTeacherLinkPreview() {
+  const url = location.origin + location.pathname + '?mode=teacher&level=' + landingLevel;
+  const el = document.getElementById('teacherLinkPreview');
+  if (el) el.textContent = url;
+}
+
+function copyTeacherLinkLanding() {
+  const url = location.origin + location.pathname + '?mode=teacher&level=' + landingLevel;
+  navigator.clipboard.writeText(url).then(function() {
+    const btn = document.getElementById('teacherCopyBtn');
+    btn.textContent = '✅ コピー済み';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(function() {
+    // フォールバック
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('teacherCopyBtn');
+    btn.textContent = '✅ コピー済み';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function goTeacher() {
+  location.href = location.pathname + '?mode=teacher&level=' + landingLevel;
+}
+
+function goStudent() {
+  location.href = location.pathname + '?mode=student&level=' + landingLevel;
+}
+
 // ===== INIT =====
 (function init() {
-  // Check teacher mode
-  isTeacher = location.search.includes('mode=teacher');
+  const params = new URLSearchParams(location.search);
+  isTeacher = params.get('mode') === 'teacher';
+  const isStudent = params.get('mode') === 'student';
+  const hasSharedTests = params.has('sharedTests') || params.has('data');
+  const levelParam = params.get('level');
+
+  // ---- ランディングページ判定 ----
+  // mode も sharedTests も data もない → ランディングを表示
+  if (!isTeacher && !isStudent && !hasSharedTests) {
+    document.getElementById('landingPage').classList.add('show');
+    document.getElementById('appContainer').style.display = 'none';
+    // teacher リンクの初期プレビューを表示
+    updateTeacherLinkPreview();
+    return; // ドリル初期化はスキップ
+  }
+
+  // ---- ドリル初期化 ----
+  document.getElementById('appContainer').style.display = '';
+
+  // URLパラメータのレベルをドリルに反映
+  if (levelParam && ['N1','N2','N3'].includes(levelParam)) {
+    currentLevel = levelParam;
+    // ランディングページで選択済みのためドリル内レベルフィルターを非表示
+    const lf = document.querySelector('.level-filter');
+    if (lf) lf.style.display = 'none';
+  }
 
   // Load GAS URL
   try {
@@ -786,6 +1045,8 @@ const BUILTIN_TEST2 = {
 
   updateShareLinkPreviews();
   populateTestSelect();
+  // ドリルのレベルボタンも URL パラメータに合わせて更新
+  setLevel(currentLevel);
   renderDashboard();
 })();
 
@@ -1405,14 +1666,19 @@ async function analyzeImage() {
   try { apiKey = localStorage.getItem('claude_key') || ''; } catch(e) {}
   if (!apiKey) { alert('Claude APIキーを設定してください（テスト追加タブ → 設定）。'); return; }
 
-  document.getElementById('overlayMsg').textContent = 'Claudeで語彙を抽出し、新しい問題を生成中...';
+  document.getElementById('overlayMsg').textContent = 'Claude が問題を推敲中です（30〜60秒ほどかかります）...';
   document.getElementById('sendingOverlay').classList.add('show');
   document.getElementById('btnAnalyze').disabled = true;
 
   const level = (document.querySelector('input[name="newTestLevel"]:checked') || {}).value || 'N1';
-  const prompt = `あなたはJLPT ${level}向けの日本語語彙テスト作成者です。
-この画像から、学習対象になる語彙・表現だけを抽出してください。画像内の問題文・例文・選択肢をそのままコピーしてはいけません。
-抽出した語彙を使って、元のスクショとは内容・文脈・語順・選択肢配置を変えた、新しい語彙問題を作成してください。
+  const systemPrompt = `あなたは20年以上の指導経験を持つJLPT認定日本語教師であり、国語学の専門家です。
+日本語能力試験（JLPT）の出題形式・採点基準・語彙レベル分類に精通しています。
+生成する問題文・選択肢はすべて、日本語母語話者が読んで「自然だ」と感じる文でなければなりません。
+文法的に正しくても日常的に使わない表現・硬すぎる文・話し言葉と書き言葉が混在した文は避けてください。
+出力前に必ず全問を声に出して読み、違和感があれば作り直してから返すこと。`;
+
+  const prompt = `この画像から、JLPT ${level}の学習対象になる語彙・表現だけを抽出してください。画像内の問題文・例文・選択肢をそのままコピーしてはいけません。
+抽出した語彙を使って、元のスクショとは内容・文脈・語順・選択肢配置を変えた、新しい${level}レベルの語彙問題を作成してください。
 
 最重要ルール：
 - 各問題は必ず「その問題専用の choices」を持たせる。sectionの共通choicesは使わず、必ず空配列 [] にする
@@ -1480,8 +1746,10 @@ async function analyzeImage() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4000,
+        model: 'claude-opus-4-5',
+        max_tokens: 10000,
+        thinking: { type: 'enabled', budget_tokens: 5000 },
+        system: systemPrompt,
         messages: [{
           role: 'user',
           content: [
@@ -1523,7 +1791,6 @@ function validateGeneratedTestQuality(testData) {
     throw new Error('生成JSONに sections 配列がありません。');
   }
   const errors = [];
-  const seenChoiceSets = {};
   let questionCount = 0;
   testData.sections.forEach(function(sec, secIndex) {
     if (sec.choices && sec.choices.length) {
@@ -1561,11 +1828,8 @@ function validateGeneratedTestQuality(testData) {
       }
       const uniqueBodies = Array.from(new Set(choiceBodies));
       if (uniqueBodies.length < 4) errors.push(label + ': 同じ選択肢が重複しています。');
-      const choiceSetKey = choiceBodies.slice().sort().join('|');
-      if (choiceSetKey) {
-        seenChoiceSets[choiceSetKey] = (seenChoiceSets[choiceSetKey] || 0) + 1;
-        if (seenChoiceSets[choiceSetKey] > 1) errors.push(label + ': 同じ選択肢セットを複数問題で使い回しています。');
-      }
+      // ※ 類義語・対義語セクションなど、同じ選択肢セットを複数問で使うケースは正当なため
+      //   「同じ選択肢セットの使い回し」チェックは行わない
     });
   });
   if (!questionCount) errors.push('問題がありません。');
